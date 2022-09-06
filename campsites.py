@@ -103,7 +103,7 @@ def get_site_list(html):
     return results
 
 
-def     send_request(payload):
+def send_request(payload):
     with requests.Session() as s:
 
         s.get(BASE_URL + UNIF_RESULTS, verify=False)  # Sets session cookie
