@@ -2,12 +2,8 @@
 import argparse
 import copy
 import requests
-import curlify
-
-import urllib
-from urllib.parse import parse_qs
-from datetime import datetime, timedelta
-from bs4 import BeautifulSoup
+from mailer import send_email_notification
+from date_util import *
 
 # Hardcoded list of campgrounds I'm willing to sleep at
 PERMIT_NUMBER = {
@@ -26,6 +22,28 @@ WHITNEY_PAYLOAD = {
 
 BASE_URL = "https://www.recreation.gov/api/permits"
 
+ACCEPTABLE_OVERNIGHT_DATES = [
+    "10-07-2022",
+    "10-08-2022",
+    "10-09-2022",
+    "10-14-2022",
+    "10-15-2022",
+    "10-16-2022",
+    "10-21-2022",
+    "10-22-2022",
+    "10-23-2022"
+]
+
+ACCEPTABLE_DAY_USE_DATES = [
+    "09-11-2022",
+    "10-09-2022",
+    "10-10-2022",
+    "10-16-2022",
+    "10-17-2022",
+    "10-23-2022",
+    "10-24-2022"
+]
+
 
 def find_availability(start_date, end_date, overnight=False):
     payload = generate_payload(start_date, end_date)
@@ -36,46 +54,16 @@ def find_availability(start_date, end_date, overnight=False):
 
     suffix = f"/{PERMIT_NUMBER['Whitney']}/divisions/{division_number}/availability"
 
-    content_raw = send_request(payload, suffix)
-    html = BeautifulSoup(content_raw, 'html.parser')
-    # sites = get_site_list(html)
-    # return sites
-    print(content_raw)
-
-
-def get_next_day(date):
-    date_object = datetime.strptime(date, "%m-%d-%Y")
-    next_day = date_object + timedelta(days=1)
-    return datetime.strftime(next_day, "%m-%d-%Y")
-
-
-def format_date(date):
-    date_object = datetime.strptime(date, "%m-%d-%Y")
-    date_formatted = datetime.strftime(date_object, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-    return date_formatted
+    resp = send_request(payload, suffix)
+    resp_json = resp.json()
+    return resp_json["payload"]["date_availability"]
 
 
 def generate_payload(start, end):
     payload = copy.copy(WHITNEY_PAYLOAD)
-    payload['start_date'] = format_date(start)
-    payload['end_date'] = format_date(end)
+    payload['start_date'] = format_date_req(start)
+    payload['end_date'] = format_date_req(end)
     return payload
-
-
-# def get_site_list(html):
-#     sites = html.findAll('div', {"class": "check_avail_panel"})
-#     results = []
-#     for site in sites:
-#         if site.find('a', {'class': 'book_now'}):
-#             get_url = site.find('a', {'class': 'book_now'})['href']
-#             # Strip down to get query parameters
-#             get_query = get_url[get_url.find("?") + 1:] if get_url.find("?") >= 0 else get_url
-#             if get_query:
-#                 get_params = parse_qs(get_query)
-#                 site_id = get_params['parkId']
-#                 if site_id and site_id[0] in PARKS:
-#                     results.append("%s, Booking Url: %s" % (PARKS[site_id[0]], BASE_URL + get_url))
-#     return results
 
 
 def send_request(payload, suffix=None):
@@ -93,7 +81,29 @@ def send_request(payload, suffix=None):
             raise Exception("failedRequest",
                             f"ERROR, {resp.status_code} code received from {BASE_URL + suffix}")
         else:
-            return resp.text
+            return resp
 
 
-find_availability("09-08-2022", "09-10-2022")
+def search_acceptable_dates():
+    day_use_availability = find_availability("09-11-2022", "10-24-2022")
+    overnight_availability = find_availability("10-07-2022", "10-24-2022", overnight=True)
+
+    avail_day_use = []
+    avail_overnight = []
+
+    for d in ACCEPTABLE_DAY_USE_DATES:
+        date_info = day_use_availability[format_date_resp(d)]
+        if date_info["remaining"] > 2 and s_to_d(d) > datetime.today():
+            avail_day_use.append(f"{d} ({date_info['remaining']})")
+
+    for d in ACCEPTABLE_OVERNIGHT_DATES:
+        date_info = overnight_availability[format_date_resp(d)]
+        if date_info["remaining"] > 2 and s_to_d(d) > datetime.today():
+            avail_overnight.append(f"{d} ({date_info['remaining']})")
+
+    if len(avail_day_use) > 0 or len(avail_overnight) > 0:
+        dates = {"day_use": avail_day_use, "overnight": avail_overnight}
+        send_email_notification(dates)
+
+
+search_acceptable_dates()

@@ -1,5 +1,7 @@
 import smtplib
 import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 port = 587  # For starttls
 smtp_server = "smtp.gmail.com"
@@ -13,10 +15,28 @@ def retrieve_password():
 
 
 def send_email_notification(dates):
-    message = f"""\
-    Subject: Whitney Alert
-    
+    message = MIMEMultipart("alternative")
+    message["Subject"] = "Whitney Alert"
+    message["From"] = sender_email
+    message["To"] = receiver_email
+
+    # Create the plain-text and HTML version of your message
+    text = f"""\
     Whitney permit(s) available overnight: {", ".join(dates["overnight"])} and day use: {", ".join(dates["day_use"])}. Link: https://www.recreation.gov/permits/233260"""
+    html = f"""\
+    <html>
+      <body>
+        <h2>Whitney permit(s) available!</h2>
+        <p>
+           <b>Overnight:</b> {", ".join(dates["overnight"])}<br>
+           <b>Day use:</b> {", ".join(dates["day_use"])}<br><br>
+           <a href="https://www.recreation.gov/permits/233260">Link to reserve</a> 
+        </p>
+      </body>
+    </html>
+    """
+    message.attach(MIMEText(text, "plain"))
+    message.attach(MIMEText(html, "html"))
 
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_server, port) as server:
@@ -24,4 +44,4 @@ def send_email_notification(dates):
         server.starttls(context=context)
         server.ehlo()  # Can be omitted
         server.login(sender_email, retrieve_password())
-        server.sendmail(sender_email, receiver_email, message)
+        server.sendmail(sender_email, receiver_email, message.as_string())
