@@ -101,8 +101,11 @@ def search_acceptable_dates():
             avail_overnight.append(f"{d} ({date_info['remaining']})")
 
     if len(avail_day_use) > 0 or len(avail_overnight) > 0:
+        print(f"Availability found! Overnight: {avail_overnight}, Day Use: {avail_day_use}")
         dates = {"day_use": avail_day_use, "overnight": avail_overnight}
         send_email_notification(dates)
+    else:
+        print("No availability... :(\nTrying again in 10 min.")
 
 
 search_acceptable_dates()
