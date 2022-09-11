@@ -12,11 +12,11 @@ def retrieve_password():
         return f.read().strip("\n")
 
 
-def send_email_notification(date, overnight=False):
+def send_email_notification(dates):
     message = f"""\
     Subject: Whitney Alert
     
-    Whitney {"overnight" if overnight else "day use"} permit available for {date}. Link: https://www.recreation.gov/permits/233260"""
+    Whitney permit(s) available overnight: {", ".join(dates["overnight"])} and day use: {", ".join(dates["day_use"])}. Link: https://www.recreation.gov/permits/233260"""
 
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_server, port) as server:
