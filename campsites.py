@@ -35,7 +35,6 @@ ACCEPTABLE_OVERNIGHT_DATES = [
 ]
 
 ACCEPTABLE_DAY_USE_DATES = [
-    "09-11-2022",
     "10-09-2022",
     "10-10-2022",
     "10-16-2022",
@@ -85,7 +84,7 @@ def send_request(payload, suffix=None):
 
 
 def search_acceptable_dates():
-    day_use_availability = find_availability("09-11-2022", "10-24-2022")
+    day_use_availability = find_availability("10-07-2022", "10-24-2022")
     overnight_availability = find_availability("10-07-2022", "10-24-2022", overnight=True)
 
     avail_day_use = []

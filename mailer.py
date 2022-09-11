@@ -2,6 +2,7 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import os
 
 port = 587  # For starttls
 smtp_server = "smtp.gmail.com"
@@ -10,6 +11,11 @@ receiver_email = "wilsonspearman@gmail.com"  # Enter receiver address
 
 
 def retrieve_password():
+    password = os.environ.get('password', None)
+
+    if password:
+        return password
+
     with open('super_secure_password.txt') as f:
         return f.read().strip("\n")
 
