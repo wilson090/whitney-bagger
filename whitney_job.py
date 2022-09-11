@@ -6,6 +6,7 @@ sched = BlockingScheduler()
 
 @sched.scheduled_job('interval', minutes=10)
 def timed_job():
+    print("Running Whitney search!")
     search_acceptable_dates()
 
 
