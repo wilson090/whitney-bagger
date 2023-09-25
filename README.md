@@ -1,5 +1,7 @@
 # whitney-bagger
 
+I used this script to monitor permit availability for Mt. Whitney on Recreation.gov  
+
 https://github.com/bri-bri/yosemite-camping
 
 https://realpython.com/python-send-email/
